@@ -3,9 +3,11 @@ package controllers
 import (
 	"io"
 	"net/http"
+	"strconv"
 
 	"go-upload/models"
 	"go-upload/services"
+	"go-upload/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -66,7 +68,29 @@ func (ctrl *UploadController) UploadFile(c *gin.Context) {
 		return
 	}
 
-	result, err := ctrl.uploadService.UploadFile(fileBuffer, file.Filename, path)
+	position := c.PostForm("position")
+	brandLogo := c.PostForm("brandLogo")
+	widthStr := c.PostForm("width")
+	heightStr := c.PostForm("height")
+
+	var brandingOptions *utils.BrandingOptions
+
+	if position != "" && brandLogo != "" && widthStr != "" && heightStr != "" {
+		width, err := strconv.Atoi(widthStr)
+		if err == nil {
+			height, err := strconv.Atoi(heightStr)
+			if err == nil {
+				brandingOptions = &utils.BrandingOptions{
+					Position:  utils.BrandPosition(position),
+					BrandLogo: brandLogo,
+					Width:     width,
+					Height:    height,
+				}
+			}
+		}
+	}
+
+	result, err := ctrl.uploadService.UploadFile(fileBuffer, file.Filename, path, brandingOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Success: false,
@@ -79,9 +103,7 @@ func (ctrl *UploadController) UploadFile(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse{
 		Success: true,
 		Message: "File uploaded successfully",
-		Data: map[string]string{
-			"url": result.URL,
-		},
+		FileUrl: result.URL,
 	})
 }
 
@@ -119,8 +141,5 @@ func (ctrl *UploadController) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse{
 		Success: true,
 		Message: "Server is healthy",
-		Data: map[string]interface{}{
-			"status": "ok",
-		},
 	})
 }
