@@ -1,0 +1,5 @@
+temp/
+uploads/
+config.yaml
+*.log
+go-upload
