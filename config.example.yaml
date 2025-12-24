@@ -1,0 +1,15 @@
+server:
+  port: 8003
+  host: "0.0.0.0"
+
+r2:
+  access_key_id: ""
+  secret_access_key: ""
+  bucket_name: ""
+  endpoint: ""
+  region: "auto"
+  custom_domain: ""
+
+upload:
+  max_file_size: 157286400
+  temp_dir: "./temp"
