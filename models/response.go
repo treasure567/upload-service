@@ -3,7 +3,7 @@ package models
 type SuccessResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	FileUrl string      `json:"fileUrl,omitempty"`
 }
 
 type ErrorResponse struct {
