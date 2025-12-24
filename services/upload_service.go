@@ -19,13 +19,13 @@ func GetUploadService() *UploadService {
 	return uploadServiceInstance
 }
 
-func (s *UploadService) UploadFile(fileBuffer []byte, filename string, folderPath string) (*models.UploadResult, error) {
+func (s *UploadService) UploadFile(fileBuffer []byte, filename string, folderPath string, brandingOptions *utils.BrandingOptions) (*models.UploadResult, error) {
 	ext := strings.TrimPrefix(filepath.Ext(filename), ".")
 	if ext == "" {
 		ext = "bin"
 	}
 
-	result, err := utils.UploadToR2(fileBuffer, folderPath, ext)
+	result, err := utils.UploadToR2(fileBuffer, folderPath, ext, brandingOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload file: %w", err)
 	}
