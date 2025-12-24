@@ -6,6 +6,7 @@ import (
 	"go-upload/config"
 	"go-upload/models"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -14,13 +15,40 @@ import (
 	"github.com/google/uuid"
 )
 
-func UploadToR2(fileBuffer []byte, folderPath string, ext string) (*models.UploadResult, error) {
+func UploadToR2(fileBuffer []byte, folderPath string, ext string, brandingOptions *BrandingOptions) (*models.UploadResult, error) {
+	if brandingOptions != nil && brandingOptions.Position != "" && brandingOptions.BrandLogo != "" && brandingOptions.Width > 0 && brandingOptions.Height > 0 {
+		allowedExtensions := []string{"png", "jpg", "jpeg"}
+		extLower := strings.ToLower(ext)
+		isAllowed := false
+		for _, allowed := range allowedExtensions {
+			if extLower == allowed {
+				isAllowed = true
+				break
+			}
+		}
+
+		if isAllowed {
+			fmt.Println("Applying branding before upload...")
+			brandedBuffer, err := BrandImage(fileBuffer, *brandingOptions, ext)
+			if err != nil {
+				return nil, fmt.Errorf("failed to apply branding: %w", err)
+			}
+			fileBuffer = brandedBuffer
+		} else {
+			fmt.Printf("Branding skipped: File type .%s not supported. Only PNG, JPG, JPEG are supported.\n", ext)
+		}
+	}
+
+	return uploadToCloudflareR2(fileBuffer, folderPath, ext)
+}
+
+func uploadToCloudflareR2(fileBuffer []byte, folderPath string, ext string) (*models.UploadResult, error) {
 	cfg := config.AppConfig.R2
 
 	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(cfg.Region),
-		Endpoint:    aws.String(cfg.Endpoint),
-		Credentials: credentials.NewStaticCredentials(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
+		Region:           aws.String(cfg.Region),
+		Endpoint:         aws.String(cfg.Endpoint),
+		Credentials:      credentials.NewStaticCredentials(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
 		S3ForcePathStyle: aws.Bool(true),
 	})
 	if err != nil {
